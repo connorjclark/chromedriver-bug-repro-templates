@@ -59,10 +59,7 @@ describe('Selenium ChromeDriver', function () {
     const options = new chrome.Options();
     options.addArguments('--headless');
     options.addArguments('--no-sandbox');
-
-    // Attempt to use Chrome 128 as specified in the bug report.
-    // Selenium Manager should handle downloading it if possible.
-    options.setBrowserVersion('128');
+    options.setBrowserVersion('stable');
 
     const service = new chrome.ServiceBuilder()
       .loggingTo('chromedriver.log')
