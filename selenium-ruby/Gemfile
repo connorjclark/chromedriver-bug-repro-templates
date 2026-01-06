@@ -16,3 +16,4 @@ source 'https://rubygems.org'
 
 gem 'selenium-webdriver', '>= 4.10.0'
 gem 'rspec'
+gem 'webrick'
