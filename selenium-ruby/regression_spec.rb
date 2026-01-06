@@ -37,12 +37,10 @@ RSpec.describe 'ChromeDriver Drag Freeze Reproduction' do
 
   it 'should not freeze when dragging a draggable link' do
     options = Selenium::WebDriver::Options.chrome
-    # Reporter says it happens in 143.0.7499.169. 
-    # They suggest making it headfull, but in automated environments we try headless=new first.
-    options.add_argument('--headless=new') 
-    options.add_argument('--no-sandbox')
-    options.add_argument('--disable-dev-shm-usage')
-    options.add_argument('--window-size=1280,1024')
+    # options.add_argument('--headless=new') 
+    # options.add_argument('--no-sandbox')
+    # options.add_argument('--disable-dev-shm-usage')
+    # options.add_argument('--window-size=1280,1024')
     options.browser_version = 'stable'
     service = Selenium::WebDriver::Service.chrome(args: ['--verbose', '--log-path=chromedriver.log'])
     driver = Selenium::WebDriver.for :chrome, options: options, service: service
@@ -56,42 +54,15 @@ RSpec.describe 'ChromeDriver Drag Freeze Reproduction' do
 
       link = driver.find_element(tag_name: 'a')
       div = driver.find_element(tag_name: 'div')
-      
+
       puts "Attempting drag action (click_and_hold then move_by)..."
-      
+
       # Exact sequence from the bug report:
       # sess.driver.browser.action.move_to(sess.find_link.native).click_and_hold.move_by(100, 100).perform
       driver.action.move_to(link).click_and_hold.move_by(100, 100).perform
-      
-      puts "Drag action 'perform' returned. Sleeping for 5 seconds..."
-      sleep 5
-      
-      puts "Checking if browser is still responsive..."
 
-      # If the bug is present, the reporter says the browser is "unusable".
-      # We check this by trying to perform more actions.
-      begin
-        Timeout.timeout(10) do
-          puts "Attempting to get title..."
-          puts "Browser title: #{driver.title}"
-          
-          puts "Attempting to execute script..."
-          driver.execute_script("return 1 + 1")
-          
-          puts "Attempting to interact with another element..."
-          # Click the div. This should require the browser's main thread to be responsive.
-          driver.action.move_to(div).click.perform
-          
-          puts "Attempting to navigate to about:blank..."
-          driver.navigate.to "about:blank"
-        end
-      rescue Timeout::Error => e
-        raise "REPRODUCED: Browser frozen! Subsequent commands failed after drag action. Error: #{e.message}"
-      rescue => e
-        raise "REPRODUCED: Browser in unusable state! Error: #{e.message}"
-      end
-
-      puts "Browser is still responsive. Reproduction failed."
+      # Sleep. You can no longer interact with the browser page (try selecting text).
+      sleep 100
     ensure
       driver.quit
     end
