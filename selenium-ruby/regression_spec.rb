@@ -38,9 +38,9 @@ RSpec.describe 'ChromeDriver Drag Freeze Reproduction' do
   it 'should not freeze when dragging a draggable link' do
     options = Selenium::WebDriver::Options.chrome
     # options.add_argument('--headless=new') 
-    # options.add_argument('--no-sandbox')
-    # options.add_argument('--disable-dev-shm-usage')
-    # options.add_argument('--window-size=1280,1024')
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
+    options.add_argument('--window-size=1280,1024')
     options.browser_version = 'stable'
     service = Selenium::WebDriver::Service.chrome(args: ['--verbose', '--log-path=chromedriver.log'])
     driver = Selenium::WebDriver.for :chrome, options: options, service: service
