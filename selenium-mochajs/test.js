@@ -14,24 +14,19 @@
  * limitations under the License.
  */
 
-const { Builder } = require('selenium-webdriver');
+const { Builder, By } = require('selenium-webdriver');
 const { expect } = require('expect');
 const chrome = require('selenium-webdriver/chrome');
+const path = require('path');
 
-describe('Selenium ChromeDriver', function () {
+describe('ChromeDriver Bug Reproduction: clear() missing input event', function () {
   let driver;
-  // The chrome and chromedriver installation can take some time. 
-  // Give 5 minutes to install everything.
   this.timeout(5 * 60 * 1000);
 
   beforeEach(async function () {
     const options = new chrome.Options();
     options.addArguments('--headless');
     options.addArguments('--no-sandbox');
-
-    // By default, the test uses the latest stable Chrome version.
-    // Replace the "stable" with the specific browser version if needed,
-    // e.g. 'canary', '115' or '144.0.7534.0' for example.
     options.setBrowserVersion('stable');
 
     const service = new chrome.ServiceBuilder()
@@ -49,32 +44,44 @@ describe('Selenium ChromeDriver', function () {
     await driver.quit();
   });
 
-  it('should clear the input field correctly', async function () {
-    const url = 'https://sandbox.mabl.com/mailbox';
-    await driver.get(url);
+  /**
+   * This test reproduces a known issue where ChromeDriver's clear() method
+   * fails to fire the 'input' event. 
+   * 
+   * In modern frameworks like React, the 'input' event is used to sync the 
+   * UI with internal state. If the event is missing, the framework may 
+   * restore the previous value on the next render or blur event, effectively
+   * undoing the clear().
+   */
+  it('should clear the input and trigger "input" event to stay in sync', async function () {
+    const filePath = path.resolve(__dirname, 'repro.html');
+    await driver.get('file://' + filePath);
 
-    const { By } = require('selenium-webdriver');
+    const input1 = await driver.findElement(By.id('input1'));
+    const input2 = await driver.findElement(By.id('input2'));
 
-    // XPaths from the bug report
-    const input1Xpath = '/html/body/div/div[2]/div/div[2]/form/div/div[1]/div/input';
-    const input2Xpath = '/html/body/div/div[2]/div/div[2]/form/div/div[2]/div/input';
-
-    const input1 = await driver.findElement(By.xpath(input1Xpath));
-    await input1.click();
+    // 1. Type "First" into the first input
     await input1.sendKeys('First');
-
-    const input2 = await driver.findElement(By.xpath(input2Xpath));
+    
+    // 2. Blur to ensure state is committed
     await input2.click();
-    await input2.sendKeys('Second');
 
-    // Go back to first input, clear and type "Third"
-    await input1.click();
+    // 3. Clear the first input
+    // EXPECTATION: clear() should fire 'input' event so state updates to ""
     await input1.clear();
+
+    // 4. Type "Third"
+    // If clear() failed to update internal state, the blur triggered by clear()
+    // or the subsequent focus might have caused the framework to restore "First".
     await input1.sendKeys('Third');
 
     const value = await input1.getAttribute('value');
-    // If the bug exists, clear() might have failed, leaving previous text or not handling the state change.
-    // We expect "Third" if clear() works.
+    
+    // Log the browser events for debugging
+    const logContent = await driver.findElement(By.id('log')).getText();
+    console.log('--- Browser Event Log ---\n' + logContent + '\n-------------------------');
+
+    // If the bug exists, value will be "FirstThird" instead of "Third"
     expect(value).toBe('Third');
   });
 });
