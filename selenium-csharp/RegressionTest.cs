@@ -54,6 +54,7 @@ public class Tests
     }
 
     [Test]
+    [Repeat(20)]
     public void ShouldSwitchToNewWindowAndFindElementInHeadlessMode()
     {
         // This test reproduces the bug reported in https://issuetracker.google.com/issues/42323828
