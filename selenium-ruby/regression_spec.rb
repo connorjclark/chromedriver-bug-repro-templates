@@ -38,9 +38,9 @@ RSpec.describe 'ChromeDriver Drag Freeze Reproduction' do
   it 'should not freeze when dragging a draggable link' do
     options = Selenium::WebDriver::Options.chrome
     # options.add_argument('--headless=new') 
-    options.add_argument('--no-sandbox')
-    options.add_argument('--disable-dev-shm-usage')
-    options.add_argument('--window-size=1280,1024')
+    # options.add_argument('--no-sandbox')
+    # options.add_argument('--disable-dev-shm-usage')
+    # options.add_argument('--window-size=1280,1024')
     options.browser_version = 'stable'
     service = Selenium::WebDriver::Service.chrome(args: ['--verbose', '--log-path=chromedriver.log'])
     driver = Selenium::WebDriver.for :chrome, options: options, service: service
@@ -60,6 +60,9 @@ RSpec.describe 'ChromeDriver Drag Freeze Reproduction' do
       # Exact sequence from the bug report:
       # sess.driver.browser.action.move_to(sess.find_link.native).click_and_hold.move_by(100, 100).perform
       driver.action.move_to(link).click_and_hold.move_by(100, 100).perform
+
+      # NOTE: if this code ran, the hang does not happen.
+      # driver.action.move_to(div).click.perform
 
       # Sleep. You can no longer interact with the browser page (try selecting text).
       sleep 100
