@@ -15,24 +15,33 @@
 require 'selenium-webdriver'
 require 'rspec'
 
-RSpec.describe 'ChromeDriver Network Conditions Regression' do
-  it 'should be able to navigate after deleting network conditions' do
+RSpec.describe 'ChromeDriver Drag Freeze Reproduction' do
+  it 'should not freeze when dragging a draggable link' do
     options = Selenium::WebDriver::Options.chrome
     options.add_argument('--headless')
     options.add_argument('--no-sandbox')
-    # By default, the test uses the latest stable Chrome version.
-    # Replace the "stable" with the specific browser version if needed,
-    # e.g. 'canary', '115' or '144.0.7534.0' for example.
     options.browser_version = 'stable'
     service = Selenium::WebDriver::Service.chrome(args: ['--verbose', '--log-path=chromedriver.log'])
     driver = Selenium::WebDriver.for :chrome, options: options, service: service
 
     begin
-      # Navigate to a URL
-      driver.navigate.to 'https://www.google.com'
+      driver.manage.timeouts.page_load = 5 # Prevent long hang if it freezes during load (unlikely)
+      
+      # Load the reproduction HTML
+      html = '<html> <body> <a href="https://google.com" draggable>foo</a> <div>qwe</div> </body> </html>'
+      driver.navigate.to "data:text/html;charset=utf-8,#{html}"
 
-      # Assert that the navigation was successful
-      expect(driver.title).to eq('Google')
+      link = driver.find_element(tag_name: 'a')
+      
+      puts "Attempting drag action..."
+      
+      # sess.driver.browser.action.move_to(sess.find_link.native).click_and_hold.move_by(100, 100).perform
+      driver.action.move_to(link).click_and_hold.move_by(100, 100).perform
+      
+      puts "Drag action completed."
+
+      # If we reach here, we didn't freeze.
+      expect(true).to be(true)
     ensure
       driver.quit
     end
