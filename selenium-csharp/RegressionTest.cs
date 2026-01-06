@@ -65,7 +65,6 @@ public class Tests
         // The bug is specific to the new headless mode.
         options.AddArgument("--headless=new");
         options.AddArgument("--no-sandbox");
-        options.AddArgument("--window-size=1920,1080");
         options.BrowserVersion = "stable";
 
         var service = ChromeDriverService.CreateDefaultService();
@@ -96,8 +95,7 @@ public class Tests
 
             // The bug occurs here: the driver fails to find the element in the new tab in headless mode.
             // We expect a NoSuchElementException or a timeout.
-            // Using XPath as per the bug report.
-            IWebElement newTabElement = wait.Until(ExpectedConditions.ElementIsVisible(By.XPath("//h1[@id='new-tab-heading']")));
+            IWebElement newTabElement = wait.Until(ExpectedConditions.ElementIsVisible(By.Id("new-tab-heading")));
 
             // The assertion will fail because the element is not found.
             // This confirms the presence of the bug.
