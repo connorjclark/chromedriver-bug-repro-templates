@@ -15,14 +15,22 @@
  */
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.bidi.browsingcontext.BrowsingContext;
+import org.openqa.selenium.bidi.browsingcontext.NavigationResult;
+import org.openqa.selenium.bidi.browsingcontext.ReadinessState;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeDriverService;
 import org.openqa.selenium.chrome.ChromeOptions;
+import java.util.HashMap;
+import java.util.Map;
 
 public class RegressionTest {
 
@@ -64,7 +72,45 @@ public class RegressionTest {
   }
 
   @Test
-  public void ISSUE_REPRODUCTION() {
-    // Add test reproducing the issue here.
+  public void testTimeoutExceptionInHeadlessBidi() {
+    // Quit the driver initialized in @BeforeEach to start fresh with specific options
+    if (driver != null) {
+      driver.quit();
+    }
+
+    // Setup ChromeOptions
+    ChromeOptions chromeOptions = new ChromeOptions();
+    chromeOptions.setCapability("webSocketUrl", true);
+    chromeOptions.addArguments("--headless=new");
+    chromeOptions.addArguments("--no-sandbox"); // Good practice in CI environments
+
+    Map<String, String> mobileEmulation = new HashMap<>();
+    mobileEmulation.put("deviceName", "iPhone 12 Pro");
+
+    chromeOptions.setExperimentalOption("mobileEmulation", mobileEmulation);
+
+    // Create WebDriver
+    driver = new ChromeDriver(chromeOptions);
+
+    String url = "https://www.selenium.dev/documentation/webdriver/bidirectional/webdriver_bidi/";
+
+    // Create BrowsingContext
+    BrowsingContext browsingContext =
+            new BrowsingContext(driver, driver.getWindowHandle());
+    browsingContext.activate();
+
+    // Navigate to the URL
+    NavigationResult navigationResult =
+            browsingContext.navigate(url, ReadinessState.COMPLETE);
+
+    assertEquals(url, navigationResult.getUrl(), "User should see the webpage loaded successfully");
+
+    // Find WebElement a[href='https://w3c.github.io/webdriver-bidi/']
+    WebElement w3cBiDiLink =
+            driver.findElement(new By.ByCssSelector("a[href='https://w3c.github.io/webdriver-bidi/']"));
+
+    // Try to click WebElement - Expected to fail with TimeoutException if bug exists
+    assertTrue(w3cBiDiLink.isDisplayed(), "User should see the WebDriver W3C link displayed!");
+    w3cBiDiLink.click();
   }
 }
